@@ -59,6 +59,7 @@ private:
   unitval dic_lastyear;  //
   unitval compute_tabsC(const unitval SST) const;
   fluxpool ao_flux; //!< atmosphere -> ocean flux
+  fluxpool cdr_removal; //!< atmosphere -> ocean flux
   fluxpool oa_flux; //!< ocean -> atmosphere flux
 
 public:
@@ -69,8 +70,8 @@ public:
 
   void initbox(double C, std::string name = "");
   void make_connection(oceanbox *ob, const double k, const int window);
-  void compute_fluxes(const unitval current_Ca, const fluxpool atmosphere_cpool,
-                      const double yf, const bool do_circ = true);
+  void compute_fluxes(const unitval current_Ca, const fluxpool atmosphere_cpool, const fluxpool cs_flux,
+                      const double yf, const bool do_circ = true, const bool do_cdr = false);
   void log_state();
   void update_state();
   void new_year(const unitval SST);

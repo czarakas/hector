@@ -76,6 +76,8 @@ public:
   void stashCValues(double t, const double c[]);
   void record_state(double t);
   void set_atmosphere_sources(fluxpool atm) { atmosphere_cpool = atm; };
+  void set_cdr_fluxes(fluxpool cdr) { cdr_flux=cdr; };
+
   fluxpool get_oaflux() const;
   fluxpool get_aoflux() const;
 
@@ -104,6 +106,7 @@ private:
   unitval SST;      //!< Ocean surface temperature anomaly, degC
   unitval CO2_conc; //!< Atmospheric CO2, ppm
   fluxpool atmosphere_cpool;
+  fluxpool cdr_flux;
 
   // Atmosphere-ocean flux
   unitval annualflux_sum, annualflux_sumHL,
