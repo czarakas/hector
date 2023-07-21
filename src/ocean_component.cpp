@@ -345,7 +345,6 @@ unitval OceanComponent::annual_totalcflux(const double date,
   if (in_spinup && !spinup_chem) {
     flux = surfaceHL.preindustrial_flux + surfaceLL.preindustrial_flux;
   } else {
-    flux = surfaceHL.preindustrial_flux + surfaceLL.preindustrial_flux;
     flux =
         surfaceHL.mychemistry.calc_annual_surface_flux(CO2_conc, cpoolscale) +
         surfaceLL.mychemistry.calc_annual_surface_flux(CO2_conc, cpoolscale);
@@ -604,6 +603,7 @@ void OceanComponent::getCValues(double t, double c[]) {
  */
 int OceanComponent::calcderivs(double t, const double c[],
                                double dcdt[]) const {
+
   const double yearfraction = (t - ODEstartdate);
 
   // If the solver has adjusted the ocean and/or atmosphere pools,
