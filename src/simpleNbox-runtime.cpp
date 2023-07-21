@@ -552,6 +552,10 @@ void SimpleNbox::stashCValues(double t, const double c[]) {
   H_LOG(logger, Logger::DEBUG) << "masstot = " << masstot << ", sum = " << sum
                                << ", diff = " << diff << std::endl;
   if (masstot > 0.0 && diff > MB_EPSILON) {
+    // Commented out this error check because hacky implementation causes mass to not be conserved for one year
+    // this is because the atmospheric, deep earth, and land carbon pools are updated at the beginning of the timestep, but
+    // the ocean pool is updated at the end of the timestep. So during the timestep CDR has already been added to the deep
+    // earth, but has not yet been subtracted from the ocean.
     //H_LOG(logger, Logger::SEVERE)
     //    << "Mass not conserved in " << getComponentName() << std::endl;
     //H_LOG(logger, Logger::SEVERE)
@@ -902,11 +906,12 @@ int SimpleNbox::calcderivs(double t, const double c[], double dcdt[]) const {
       current_luc_e.value(U_PGC_YR) - current_luc_u.value(U_PGC_YR) +
       ch4ox_current.value(U_PGC_YR) - ocean_uptake.value(U_PGC_YR) +
       ocean_release.value(U_PGC_YR) -
+      npp_current.value(U_PGC_YR)
       // HACK: For mass balance purposes, dump both RH{CO2} and RH{CH4} into
       // the atmosphere. Effectively, this means that CH4 is emitted on top of
       // existing CO2 -- i.e., more CH4 emissions does not mean less CO2
       // emissions from RH
-      npp_current.value(U_PGC_YR) + rh_ch4_current.value(U_PGC_YR) + rh_current.value(U_PGC_YR);
+      + rh_ch4_current.value(U_PGC_YR) + rh_current.value(U_PGC_YR);
   } else { // if CDR is coming from the atmosphere, do remove daccs flux from the atmosphere
   dcdt[SNBOX_ATMOS] = // change in atmosphere pool
       current_ffi_e.value(U_PGC_YR) - current_daccs_u.value(U_PGC_YR) +
