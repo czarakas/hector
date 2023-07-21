@@ -146,7 +146,7 @@ void CSVOutputStreamVisitor::visit(Core *c) {
 void CSVOutputStreamVisitor::visit(ForcingComponent *c) {
   if (!core->outputEnabled(c->getComponentName()))
     return;
-  streamsize oldPrecision = csvFile.precision(4);
+    streamsize oldPrecision = csvFile.precision(15);
 
   if (c->currentYear < c->baseyear)
     return;
