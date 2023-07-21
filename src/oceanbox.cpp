@@ -199,10 +199,12 @@ void oceanbox::log_state() {
  * \param[in] current_Ca                atmospheric CO2
  * \param[in] yf                year fraction (0-1)
  * \param[in] do_circ           flag: do circulation, or not?
+ * \param[in] do_cdr           flag: do CDR, or not?
  */
 void oceanbox::compute_fluxes(const unitval current_Ca,
-                              const fluxpool atmosphere_cpool, const double yf,
-                              const bool do_circ) {
+                              const fluxpool atmosphere_cpool, const fluxpool cs_flux, const double yf,
+                              const bool do_circ, const bool do_cdr
+                              ) {
 
   CO2_conc = current_Ca;
 
@@ -257,6 +259,13 @@ void oceanbox::compute_fluxes(const unitval current_Ca,
     } // for i
 
   } // if do_circulation
+
+  if (do_cdr) { 
+    unitval cs_flux_partial = unitval(cs_flux * yf, U_PGC);
+    cdr_removal=carbon.flux_from_unitval(cs_flux_partial);
+    CarbonSubtractions = CarbonSubtractions + cdr_removal;
+  }
+
 }
 
 void oceanbox::separate_surface_fluxes(fluxpool atmosphere_pool) {

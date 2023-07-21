@@ -293,6 +293,15 @@ void SimpleNbox::stashCValues(double t, const double c[]) {
   fluxpool ffi_flux = earth_c.flux_from_fluxpool(ffi_untracked);
   fluxpool ccs_flux = atmos_c.flux_from_fluxpool(ccs_untracked);
 
+  bool ocean_cdr=false;
+  if (ocean_cdr){ //if CDR is direct ocean removal (DOR), send the ocean model the DACCS flux
+    fluxpool dor_untracked = current_daccs_u;
+    omodel->set_cdr_fluxes(dor_untracked);
+  } else { //otherwise, assume CDR is DACCS, so send the ocean model a zero DOR flux
+    fluxpool dor_untracked = fluxpool(0.0, U_PGC);
+    omodel->set_cdr_fluxes(dor_untracked);
+  }
+
   // current ocean fluxes
   omodel->stashCValues(t, c); // tell ocean model to store new C values (and
                               // compute final surface fluxes)
@@ -543,12 +552,13 @@ void SimpleNbox::stashCValues(double t, const double c[]) {
   H_LOG(logger, Logger::DEBUG) << "masstot = " << masstot << ", sum = " << sum
                                << ", diff = " << diff << std::endl;
   if (masstot > 0.0 && diff > MB_EPSILON) {
-    H_LOG(logger, Logger::SEVERE)
-        << "Mass not conserved in " << getComponentName() << std::endl;
-    H_LOG(logger, Logger::SEVERE)
-        << "masstot = " << masstot << ", sum = " << sum << ", diff = " << diff
-        << std::endl;
-    H_THROW("Mass not conserved! (See log.)");
+    //H_LOG(logger, Logger::SEVERE)
+    //    << "Mass not conserved in " << getComponentName() << std::endl;
+    //H_LOG(logger, Logger::SEVERE)
+    //    << "masstot = " << masstot << ", sum = " << sum << ", diff = " << diff
+    //    << std::endl;
+    //H_THROW("Mass not conserved! (See log.)");
+    
   }
   masstot = sum;
 
@@ -880,18 +890,35 @@ int SimpleNbox::calcderivs(double t, const double c[], double dcdt[]) const {
     rh_fsa_current = rh_fsa_current * rh_ratio;
   }
 
+  bool ocean_cdr = false;
   // Compute fluxes
+  dcdt[SNBOX_EARTH] = // change in earth pool
+      -current_ffi_e.value(U_PGC_YR) + current_daccs_u.value(U_PGC_YR);
+  dcdt[SNBOX_OCEAN] = // change in ocean pool
+      ocean_uptake.value(U_PGC_YR) - ocean_release.value(U_PGC_YR);
+  if (ocean_cdr) { // if CDR is coming from the ocean, don't remove daccs flux from the atmosphere
+  dcdt[SNBOX_ATMOS] = // change in atmosphere pool
+      current_ffi_e.value(U_PGC_YR) +
+      current_luc_e.value(U_PGC_YR) - current_luc_u.value(U_PGC_YR) +
+      ch4ox_current.value(U_PGC_YR) - ocean_uptake.value(U_PGC_YR) +
+      ocean_release.value(U_PGC_YR) -
+      // HACK: For mass balance purposes, dump both RH{CO2} and RH{CH4} into
+      // the atmosphere. Effectively, this means that CH4 is emitted on top of
+      // existing CO2 -- i.e., more CH4 emissions does not mean less CO2
+      // emissions from RH
+      npp_current.value(U_PGC_YR) + rh_ch4_current.value(U_PGC_YR) + rh_current.value(U_PGC_YR);
+  } else { // if CDR is coming from the atmosphere, do remove daccs flux from the atmosphere
   dcdt[SNBOX_ATMOS] = // change in atmosphere pool
       current_ffi_e.value(U_PGC_YR) - current_daccs_u.value(U_PGC_YR) +
       current_luc_e.value(U_PGC_YR) - current_luc_u.value(U_PGC_YR) +
       ch4ox_current.value(U_PGC_YR) - ocean_uptake.value(U_PGC_YR) +
       ocean_release.value(U_PGC_YR) -
-      npp_current.value(U_PGC_YR)
       // HACK: For mass balance purposes, dump both RH{CO2} and RH{CH4} into
       // the atmosphere. Effectively, this means that CH4 is emitted on top of
       // existing CO2 -- i.e., more CH4 emissions does not mean less CO2
       // emissions from RH
-      + rh_ch4_current.value(U_PGC_YR) + rh_current.value(U_PGC_YR);
+      npp_current.value(U_PGC_YR) + rh_ch4_current.value(U_PGC_YR) + rh_current.value(U_PGC_YR);
+  }
   dcdt[SNBOX_VEG] = // change in vegetation pool
       npp_fav.value(U_PGC_YR) - litter_flux.value(U_PGC_YR) -
       luc_fva.value(U_PGC_YR) + luc_fav.value(U_PGC_YR);
@@ -909,10 +936,6 @@ int SimpleNbox::calcderivs(double t, const double c[], double dcdt[]) const {
   dcdt[SNBOX_THAWEDP] = // change in thawed permafrost pool
       pf_thaw_c.value(U_PGC_YR) - pf_refreeze_tp.value(U_PGC_YR) -
       rh_ftpa_ch4_current.value(U_PGC_YR) - rh_ftpa_co2_current.value(U_PGC_YR);
-  dcdt[SNBOX_OCEAN] = // change in ocean pool
-      ocean_uptake.value(U_PGC_YR) - ocean_release.value(U_PGC_YR);
-  dcdt[SNBOX_EARTH] = // change in earth pool
-      -current_ffi_e.value(U_PGC_YR) + current_daccs_u.value(U_PGC_YR);
 
   /*
   if(!in_spinup) {

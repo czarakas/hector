@@ -246,12 +246,14 @@ void OceanComponent::prepareToRun() {
   H_LOG(logger, Logger::DEBUG) << "Setting up ocean box model" << std::endl;
   surfaceHL.initbox(HL_preind_C, "HL");
   surfaceHL.surfacebox = true;
+  // Note that if I turn off circulation, these preindustrial fluxes need to be set to 0
   surfaceHL.preindustrial_flux.set(1.000,
                                    U_PGC_YR); // used if no spinup chemistry
   surfaceHL.active_chemistry = spinup_chem;
 
   surfaceLL.initbox(LL_preind_C, "LL");
   surfaceLL.surfacebox = true;
+  // Note that if I turn off circulation, these preindustrial fluxes need to be set to 0
   surfaceLL.preindustrial_flux.set(-1.000,
                                    U_PGC_YR); // used if no spinup chemistry
   surfaceLL.active_chemistry = spinup_chem;
@@ -291,7 +293,7 @@ void OceanComponent::prepareToRun() {
   surfaceHL.mychemistry.S = 34.5; // Salinity Riley and Tongudai (1967)
   surfaceHL.mychemistry.volumeofbox = HL_volume;     // m3
   surfaceHL.mychemistry.As = ocean_area * part_high; // surface area m2
-  surfaceHL.mychemistry.U = 6.7; // average wind speed m/s Hartin et al. 2016
+  surfaceHL.mychemistry.U = 6.7; //6.7; // average wind speed m/s Hartin et al. 2016
 
   surfaceLL.deltaT.set(2.9,
                        U_DEGC);   // delta T to the absolute mean ocean tos to
@@ -300,7 +302,7 @@ void OceanComponent::prepareToRun() {
   surfaceLL.mychemistry.S = 34.5; // Salinity Riley and Tongudai (1967)
   surfaceLL.mychemistry.volumeofbox = LL_volume;    // m3
   surfaceLL.mychemistry.As = ocean_area * part_low; // surface area m2
-  surfaceLL.mychemistry.U = 6.7; // average wind speed m/s Hartin et al. 2016
+  surfaceLL.mychemistry.U = 12; //6.7; // average wind speed m/s Hartin et al. 2016
 
   // Initialize surface flux tracking variables and other things
   annualflux_sum.set(0.0, U_PGC);
@@ -343,6 +345,7 @@ unitval OceanComponent::annual_totalcflux(const double date,
   if (in_spinup && !spinup_chem) {
     flux = surfaceHL.preindustrial_flux + surfaceLL.preindustrial_flux;
   } else {
+    flux = surfaceHL.preindustrial_flux + surfaceLL.preindustrial_flux;
     flux =
         surfaceHL.mychemistry.calc_annual_surface_flux(CO2_conc, cpoolscale) +
         surfaceLL.mychemistry.calc_annual_surface_flux(CO2_conc, cpoolscale);
@@ -354,7 +357,6 @@ unitval OceanComponent::annual_totalcflux(const double date,
 //------------------------------------------------------------------------------
 // documentation is inherited
 void OceanComponent::run(const double runToDate) {
-
   // If we've hit the tracking start year, enagage!
   const double tdate = core->getTrackingDate();
   if (!in_spinup && runToDate == tdate) {
@@ -400,8 +402,8 @@ void OceanComponent::run(const double runToDate) {
   }
 
   // Call compute_fluxes with do_boxfluxes=false to run just chemistry
-  surfaceHL.compute_fluxes(CO2_conc, atmosphere_cpool, 1.0, false);
-  surfaceLL.compute_fluxes(CO2_conc, atmosphere_cpool, 1.0, false);
+  surfaceHL.compute_fluxes(CO2_conc, atmosphere_cpool, cdr_flux, 1.0, false, false);
+  surfaceLL.compute_fluxes(CO2_conc, atmosphere_cpool, cdr_flux, 1.0, false, false);
 
   // Now wait for the solver to call us
 }
@@ -602,7 +604,6 @@ void OceanComponent::getCValues(double t, double c[]) {
  */
 int OceanComponent::calcderivs(double t, const double c[],
                                double dcdt[]) const {
-
   const double yearfraction = (t - ODEstartdate);
 
   // If the solver has adjusted the ocean and/or atmosphere pools,
@@ -671,10 +672,10 @@ void OceanComponent::stashCValues(double t, const double c[]) {
   unitval CO2_conc(c[SNBOX_ATMOS] * PGC_TO_PPMVCO2, U_PPMV_CO2);
 
   // Compute fluxes between the boxes (advection of carbon)
-  surfaceHL.compute_fluxes(CO2_conc, atmosphere_cpool, yearfraction);
-  surfaceLL.compute_fluxes(CO2_conc, atmosphere_cpool, yearfraction);
-  inter.compute_fluxes(CO2_conc, atmosphere_cpool, yearfraction);
-  deep.compute_fluxes(CO2_conc, atmosphere_cpool, yearfraction);
+  surfaceHL.compute_fluxes(CO2_conc, atmosphere_cpool, cdr_flux, yearfraction, true, false);
+  surfaceLL.compute_fluxes(CO2_conc, atmosphere_cpool, cdr_flux, yearfraction, true, true);
+  inter.compute_fluxes(CO2_conc, atmosphere_cpool, cdr_flux, yearfraction, true, false);
+  deep.compute_fluxes(CO2_conc, atmosphere_cpool, cdr_flux, yearfraction, true, false);
 
   // At this point, compute_fluxes has (by calling the chemistry model) computed
   // atmosphere- ocean fluxes for the surface boxes. But these are
