@@ -293,7 +293,7 @@ void OceanComponent::prepareToRun() {
   surfaceHL.mychemistry.S = 34.5; // Salinity Riley and Tongudai (1967)
   surfaceHL.mychemistry.volumeofbox = HL_volume;     // m3
   surfaceHL.mychemistry.As = ocean_area * part_high; // surface area m2
-  surfaceHL.mychemistry.U = 6.7; //6.7; // average wind speed m/s Hartin et al. 2016
+  surfaceHL.mychemistry.U = 6.7; // average wind speed m/s Hartin et al. 2016
 
   surfaceLL.deltaT.set(2.9,
                        U_DEGC);   // delta T to the absolute mean ocean tos to
@@ -302,7 +302,7 @@ void OceanComponent::prepareToRun() {
   surfaceLL.mychemistry.S = 34.5; // Salinity Riley and Tongudai (1967)
   surfaceLL.mychemistry.volumeofbox = LL_volume;    // m3
   surfaceLL.mychemistry.As = ocean_area * part_low; // surface area m2
-  surfaceLL.mychemistry.U = 12; //6.7; // average wind speed m/s Hartin et al. 2016
+  surfaceLL.mychemistry.U = 6.7; // average wind speed m/s Hartin et al. 2016
 
   // Initialize surface flux tracking variables and other things
   annualflux_sum.set(0.0, U_PGC);
