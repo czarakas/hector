@@ -290,7 +290,8 @@ unitval oceanbox::calc_revelle() {
   //    unitval deltapco2 = Ca - pco2_lastyear;
   unitval deltadic = mychemistry.convertToDIC(carbon) - dic_lastyear;
 
-  H_ASSERT(deltadic.value(U_UMOL_KG) != 0, "DeltaDIC cannot be zero");
+  // Commented out this error check to enable ocean carbon removal
+  //H_ASSERT(deltadic.value(U_UMOL_KG) != 0, "DeltaDIC cannot be zero");
 
   // Revelle Factor can be calculated multiple ways:
   // based on changing atmospheric conditions as well as approximated via DIC
