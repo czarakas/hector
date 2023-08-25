@@ -596,10 +596,15 @@ void SimpleNbox::stashCValues(double t, const double c[]) {
 
     // Transfer C from atmosphere to deep ocean and update our C and [CO2]
     // variables
+    // only send the residual to the deep ocean in spin up, otherwise if there
+    // is an atmospheric CO2 constraint just remove carbon from the atmosphere 
+    // to meet the constraint and don't put the carbon anywhere else
+    if (core->inSpinup()) {
     H_LOG(logger, Logger::DEBUG) << "Sending residual of " << Ca_residual
                                  << " to deep ocean" << std::endl;
     core->sendMessage(M_DUMP_TO_DEEP_OCEAN, D_OCEAN_C,
                       message_data(Ca_residual));
+    }
     atmos_c = atmos_c - Ca_residual;
   } else {
     Ca_residual.set(0.0, U_PGC);
