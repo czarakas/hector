@@ -293,7 +293,7 @@ void SimpleNbox::stashCValues(double t, const double c[]) {
   fluxpool ffi_flux = earth_c.flux_from_fluxpool(ffi_untracked);
   fluxpool ccs_flux = atmos_c.flux_from_fluxpool(ccs_untracked);
 
-  bool ocean_cdr=false;
+  bool ocean_cdr=true;
   if (ocean_cdr){ //if CDR is direct ocean removal (DOR), send the ocean model the DACCS flux
     fluxpool dor_untracked = current_daccs_u;
     omodel->set_cdr_fluxes(dor_untracked);
@@ -899,7 +899,7 @@ int SimpleNbox::calcderivs(double t, const double c[], double dcdt[]) const {
     rh_fsa_current = rh_fsa_current * rh_ratio;
   }
 
-  bool ocean_cdr = false;
+  bool ocean_cdr = true;
   // Compute fluxes
   dcdt[SNBOX_EARTH] = // change in earth pool
       -current_ffi_e.value(U_PGC_YR) + current_daccs_u.value(U_PGC_YR);
